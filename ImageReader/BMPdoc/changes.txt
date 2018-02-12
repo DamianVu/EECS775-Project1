@@ -1,0 +1,33 @@
+If you have any bug reports or problems please mail jacob@marner.dk
+
+16. june 2002 v1.04
+---------------------
+Fixed a small portability problem that assumed that an int was at
+least 32-bit. The C/C++ only requires it to be 16-bit.
+
+24. may 2002 v1.03
+---------------------
+Added example of use. The example requires GLUT to compile and run. 
+A win32 binary is provided. 
+The C and C++ versions of this library has now been merged into one
+distribution.
+
+22. feb 2002 v1.02
+---------------------
+Fixed a minor compilation error when the BMP loader was used
+on Windows but without GLUT. If this happened the BI_RLE4,
+BI_RGB and BI_RLE8 constants was already defined. I fixed this
+by changing the names of the constants to BMP_BI_RLE4,
+BMP_BI_RGB and BMP_BI_RLE8 respectively. Thanks to
+spiff (spiff@virginia.edu) for reporting this bug.
+
+1. feb 2002 v1.01
+---------------------
+
+Improved the documentation in the header file.
+
+
+30. jan 2002 v1.00
+---------------------
+
+First public release.
