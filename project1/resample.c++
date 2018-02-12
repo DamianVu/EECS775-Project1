@@ -11,9 +11,15 @@ using namespace std;
 #include "ImageWriter.h"
 
 float cubicInterpolation(float* p, float x) {
-	return p[1] + (.5f * x * (p[2] - p[0] + (x * ((2.0f * p[0]) - (5.0f * p[1]) + (4.0f * p[2]) - p[3] + (x * ((3.0f * (p[1] - p[2])) + p[3] - p[0]))))));
+	float p0 = p[3] - p[2] - p[0] + p[1];
+	float p1 = p[0] - p[1] - p0;
+	float p2 = p[2] - p[0];
+	float p3 = p[1];
+	float x2 = x * x; // Optimization
+	return (p0 * x * x2 + p1 * x2 + p2 * x + p3);
 }
 
+// Saturate function since we wish to keep all calculations in float
 inline unsigned char saturate( float x ) {
 	if (x > 255.0f) {
 		return 255;
@@ -84,10 +90,12 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 		for (int i = 0; i < newYres; i++)
 			for (int j = 0; j < newXres; j++) {
 				// Find the location in the old image first.
-				int xi = floor(j * xRatio);
-				int yi = floor(i * yRatio);
-				float xf = (j * xRatio) - xi;
-				float yf = (i * yRatio) - yi;
+				float x = j * xRatio;
+				float y = i * yRatio;
+				int xi = floor(x);
+				int yi = floor(y);
+				float xf = x - xi;
+				float yf = y - yi;
 
 				bool xDuplicateFirstPixelFlag = (xi == 0);
 				bool yDuplicateFirstPixelFlag = (yi == 0);
@@ -130,7 +138,7 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 					currentPvalues[3][3] = orig->getDataElement(yFinal, xFinal, k);
 
 
-					out->setDataElement(i, j, k, bicubicInterpolation(currentPvalues, x, y));
+					out->setDataElement(i, j, k, bicubicInterpolation(currentPvalues, xf, yf));
 
 					for (int l = 0; l < 4; l++) 
 						delete[] currentPvalues[l];
@@ -138,6 +146,7 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 				}
 			}
 	}
+	delete orig;
 	return out;
 }
 
