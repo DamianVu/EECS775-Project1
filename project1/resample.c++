@@ -41,8 +41,6 @@ unsigned char bicubicInterpolation(float** p, float x, float y) {
 	return saturate(cubicInterpolation(temp, x));
 }
 
-int roundNum(float input) { return (input - floor(input < .5)) ? floor(input) : ceil(input); }
-
 cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method, int newXres, int newYres, int newChannels) {
 
 	cryph::Packed3DArray<unsigned char>* orig = ir->getInternalPacked3DArrayImage();
@@ -59,8 +57,8 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 		// Nearest
 		for (int i = 0; i < newYres; i++)
 			for (int j = 0; j < newXres; j++) {
-				int oldX = roundNum((float)j * xRatio);
-				int oldY = roundNum((float)i * yRatio);
+				int oldX = floor((float)j * xRatio);
+				int oldY = floor((float)i * yRatio);
 
 				for (int k = 0; k < newChannels; k++)
 					out->setDataElement(i, j, k, orig->getDataElement(oldY, oldX, k));
