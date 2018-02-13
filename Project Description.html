@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<!-- saved from url=(0080)https://people.eecs.ku.edu/~jrmiller/Courses/775/Spr2018/Projects/Project01.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>Project 1</title>
+<link rel="stylesheet" href="./Project 1_files/Style.css" type="text/css">
+<style></style></head>
+<body>
+<center>
+<h1>EECS 775 - Spring 2018</h1>
+</center>
+
+<center>
+<h2>Programming Project 1</h2>
+</center>
+
+<b>Due:</b> 12 February 2018 (emailed by 11:59:59 p.m.)
+
+<h2>Project Specification</h2>
+<p>
+This project is inspired by suggested project #1 on page 78 of the text. Basically this project will
+allow you to get experience with the fundamental operation of resampling regular grids using different
+	types of interpolation. As we have assumed in class when studying these techniques, we will assume
+	that pixel values are associated with <u>vertices</u> as opposed to cells.
+</p>
+<p>
+	Download <a href="https://people.eecs.ku.edu/~jrmiller/Courses/775/Spr2018/Projects/775Proj1.tar.gz">775Proj1.tar.gz</a> and uncompress it. This will produce a directory with
+	the following structure:
+	</p>
+	<ul>
+		<li style="margin-bottom: 0.5em"><tt>ImageReader</tt>: A directory with classes that can open and read an
+			image file in any of jpeg, png, bmp, or tga formats.</li>
+		<li style="margin-bottom: 0.5em"><tt>ImageWriter</tt>: A directory with classes that can open and write an
+			image file in any of jpeg, png, bmp, or tga formats.</li>
+		<li style="margin-bottom: 0.5em"><tt>Packed3DArray</tt>: A templated data type used by both the <tt>ImageReader</tt>
+			and <tt>ImageWriter</tt> classes to hold an internal frame buffer representation of the image and allow it to
+			be read or written almost as if it were an ordinary 3D array.</li>
+		<li style="margin-bottom: 0.5em"><tt>lib</tt>: an empty directory into which the <tt>ImageReader</tt> and
+			<tt>ImageWriter</tt> compiled libraries will be stored.</li>
+		<li style="margin-bottom: 0.5em"><tt>project1</tt>: The directory in which your code will be placed. There is an
+			example program there now that simply reads an image, modifies it, and then writes it back out. This program
+			will show you how to use the three classes mentioned above. The comments in the header
+			files <tt>ImageReader/ImageReader.h</tt>, <tt>ImageWriter/ImageWriter.h</tt>, and
+			<tt>Packed3DArray/Packed3DArray.h</tt> have extensive documentation on usage as well.
+			<p>To run the example program, simply type "<tt>make</tt>" in the project1 directory, then type:</p>
+			<center><tt>example file.jpg anotherfile.png</tt></center></li>
+	</ul>
+	<p>
+		When you submit your project, tar and submit <i>only</i> the <tt>project1</tt> subdirectory.
+	</p>
+<h3>Running your project</h3>
+<p>
+	Your program should be launched like:
+	</p>
+	<center><p><tt>% resample </tt><i>&lt;code&gt; &lt;inputImage.ext&gt; &lt;outputImage.ext&gt;</i></p></center>
+
+	<p>where</p>
+	<ul>
+		<li><i>&lt;code&gt;</i> is one of: <tt>n</tt> for nearest (no interpolation); <tt>l</tt> for bilinear
+			interpolation; or <tt>c</tt> for bicubic interpolation.</li>
+		<li>The "<tt>ext</tt>" can be any of the four supported types mentioned, and the input and output extensions need not be the same.</li>
+	</ul>
+	<p>
+Then, for example, a session might look like (what you type is shown in red):
+</p>
+	<pre>% <font color="red">resample c file.jpg out.png</font>
+Dimensions of input image: 190 x 265
+Enter desired resampled width: <font color="red">380</font>
+Enter desired resampled height: <font color="red">530</font>
+%</pre>
+
+<p>
+	When the program ends, the result will have been written to the file "<tt>out.png</tt>".
+	</p><p>
+Note that your program must allow resampling to either a higher or lower resolution. Also, do not take
+any special action (or even bother to check) if the aspect ratio of the input and output files differ.
+</p>
+	
+	<h3>Analysis</h3>
+	<p>
+		Use your implementation with several images and systematically evaluate how the three interpolation  approaches work when
+		scaling up and down with different images exhibiting different amounts of high frequency detail.  I am not necessarily
+		looking for any general assessment as to what method is best with up or down scaling; instead just see if you can
+		find some interesting insight into specific images that work better or worse with one technique or another. Include
+		your observations in a pdf file submitted along with your project code.
+	</p>
+
+<h2>Project Submission</h2>
+
+<p>
+When you are ready to submit your project, remove all the "<tt>.o</tt>" and executable
+programs in the directory containing your project. Do a <tt>cd</tt> to the parent
+directory and do the following:
+</p>
+<pre>tar cf project1.tar project1
+gzip project1.tar</pre>
+<p>
+Attach the resulting file (<tt>project1.tar.gz</tt>) to an email and send it to me
+at jrmiller@ku.edu.
+</p>
+
+
+
+</body></html>
