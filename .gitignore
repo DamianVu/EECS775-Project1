@@ -1,2 +1,4 @@
 *.o
 *.so
+project1/example
+project1/resample
