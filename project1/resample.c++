@@ -10,6 +10,7 @@ using namespace std;
 #include "ImageReader.h"
 #include "ImageWriter.h"
 
+// Basic cubic interpolation function taking in 4 input points and interpolating the x value along them.
 float cubicInterpolation(float* p, float x) {
 	float p0 = p[3] - p[2] - p[0] + p[1];
 	float p1 = p[0] - p[1] - p0;
@@ -19,7 +20,7 @@ float cubicInterpolation(float* p, float x) {
 	return (p0 * x * x2 + p1 * x2 + p2 * x + p3);
 }
 
-// Saturate function since we wish to keep all calculations in float
+// Saturate function since we wish to keep all calculations in float, but want our result as a char
 inline unsigned char saturate( float x ) {
 	if (x > 255.0f) {
 		return 255;
@@ -30,8 +31,8 @@ inline unsigned char saturate( float x ) {
 	}
 }
 
+// Since bicubic interpolation is basically cubic interpolation in two dimensions, if we do 4 cubics then one cubic of the 4, we get what we want.
 unsigned char bicubicInterpolation(float** p, float x, float y) {
-	// Since bicubic interpolation is basically cubic interpolation in two dimensions, if we do 4 cubics then one cubic of the 4, we get what we want.
 	float temp[4];
 	temp[0] = cubicInterpolation(p[0], y);
 	temp[1] = cubicInterpolation(p[1], y);
@@ -41,20 +42,26 @@ unsigned char bicubicInterpolation(float** p, float x, float y) {
 	return saturate(cubicInterpolation(temp, x));
 }
 
+// Packed function that creates the data array for the new image.
+// This function uses one of three methods: Nearest neighbor, Bilinear interpolation, and Bicubic interpolation
 cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method, int newXres, int newYres, int newChannels) {
 
+	// Original Image Array
 	cryph::Packed3DArray<unsigned char>* orig = ir->getInternalPacked3DArrayImage();
+	// New Image Array
 	cryph::Packed3DArray<unsigned char>* out = new cryph::Packed3DArray<unsigned char>(newYres, newXres, newChannels);
 
 	int oldXres = ir->getWidth();
 	int oldYres = ir->getHeight();
 	int oldChannels = ir->getNumChannels();
 
+	// Ratio of the old resolution vs the new resolution in both x and y directions.
+	// If the aspect ratio of the image stays constant, then these ratios will be equal.
 	float xRatio = oldXres / (float)newXres;
 	float yRatio = oldYres / (float)newYres;
 
 	if (method == 1) {
-		// Nearest
+		// Nearest Neighbor
 		for (int i = 0; i < newYres; i++)
 			for (int j = 0; j < newXres; j++) {
 				int oldX = floor((float)j * xRatio);
@@ -64,7 +71,7 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 					out->setDataElement(i, j, k, orig->getDataElement(oldY, oldX, k));
 			}
 	} else if (method == 2) {
-		// Bilinear
+		// Bilinear Interpolation
 		for (int i = 0; i < newYres; i++)
 			for (int j = 0; j < newXres; j++) {
 				int xi = floor(j * xRatio);
@@ -84,7 +91,7 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 				}
 			}
 	} else if (method == 3) {
-		// Bicubic
+		// Bicubic Interpolation
 		for (int i = 0; i < newYres; i++)
 			for (int j = 0; j < newXres; j++) {
 				// Find the location in the old image first.
@@ -95,6 +102,7 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 				float xf = x - xi;
 				float yf = y - yi;
 
+				// Flags to duplicate the first pixel or last 2 pixels for interpolation purposes
 				bool xDuplicateFirstPixelFlag = (xi == 0);
 				bool yDuplicateFirstPixelFlag = (yi == 0);
 				bool xDuplicateThirdPixelFlag = (xi >= oldXres - 2);
@@ -102,6 +110,7 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 				bool xDuplicateLastPixelFlag = (xi >= oldXres - 3);
 				bool yDuplicateLastPixelFlag = (yi >= oldYres - 3);
 
+				// Using those flags (could be condensed, but left separate for clarity)
 				int xInitial = (xDuplicateFirstPixelFlag) ? xi : xi - 1;
 				int yInitial = (yDuplicateFirstPixelFlag) ? yi : yi - 1;
 				int xThird = (xDuplicateThirdPixelFlag) ? xi : xi + 1;
@@ -109,12 +118,12 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 				int xFinal = (xDuplicateLastPixelFlag) ? xi : xi + 2;
 				int yFinal = (yDuplicateLastPixelFlag) ? yi : yi + 2;
 
-				// Let's get all our p values.
 				for (int k = 0; k < newChannels; k++) {
-					float** currentPvalues = new float*[4];
+					float** currentPvalues = new float*[4]; // Floats to keep operations all in float
 					for (int l = 0; l < 4; l++) 
 						currentPvalues[l] = new float[4];
 
+					// Grabs 16 P values for the bicubic interpolation
 					currentPvalues[0][0] = orig->getDataElement(yInitial, xInitial, k);
 					currentPvalues[0][1] = orig->getDataElement(yInitial, xi, k);
 					currentPvalues[0][2] = orig->getDataElement(yInitial, xThird, k);
@@ -135,7 +144,7 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 					currentPvalues[3][2] = orig->getDataElement(yFinal, xThird, k);
 					currentPvalues[3][3] = orig->getDataElement(yFinal, xFinal, k);
 
-
+					// Sets the current 'working' pixel to the bicubic interpolation from our P values with the translated x and y values. (translated to the original grid)
 					out->setDataElement(i, j, k, bicubicInterpolation(currentPvalues, xf, yf));
 
 					for (int l = 0; l < 4; l++) 
@@ -148,6 +157,7 @@ cryph::Packed3DArray<unsigned char>* createNewImage(ImageReader* ir, int method,
 	return out;
 }
 
+// Almost unnecessary middle step, but was in the example rubric for this project.
 const unsigned char* createAndWriteTheOutputFile(ImageReader* ir, int method, int newXres, int newYres, int newChannels) {
 
 	cryph::Packed3DArray<unsigned char>* out = createNewImage(ir, method, newXres, newYres, newChannels);
@@ -159,14 +169,14 @@ int main(int argc, char* argv[]) {
 	if (argc < 4 || (strcmp(argv[1],"c") != 0 && strcmp(argv[1],"n") != 0 && strcmp(argv[1],"l") != 0)) {
 		cerr << "Usage: " << argv[0] << " interpolationType(n,l,c) inputImageFile outputImageFile\n";
 	} else {
-		//cout << "Args: " << argv[1] << argv[2] << argv[3];
 		int method;
+		// Ideally, the method arg will be one of these 3 characters before coming to the ELSE part of this IF.
 		if (strcmp(argv[1],"n") == 0) method = 1;
 		else if (strcmp(argv[1],"l") == 0) method = 2;
 		else if (strcmp(argv[1],"c") == 0) method = 3;
 
 		ImageReader* ir = ImageReader::create(argv[2]);
-		if (ir == nullptr) exit(1);
+		if (ir == nullptr) exit(1); // If given an image that does not exist. The ImageReader class will have debug messages.
 		int xResIn = ir->getWidth();
 		int yResIn = ir->getHeight();
 		int nChannelsIn = ir-> getNumChannels();
@@ -177,6 +187,7 @@ int main(int argc, char* argv[]) {
 		cout << "Enter desired resampled height: ";
 		cin >> inHeight;
 
+		// We assume the user types in actual numbers. Project rubric stated no need to check for bad input.
 		int xResOut = stoi(inWidth);
 		int yResOut = stoi(inHeight);
 		int nChannelsOut = nChannelsIn;
@@ -185,8 +196,6 @@ int main(int argc, char* argv[]) {
 
 		const unsigned char* out = createAndWriteTheOutputFile(ir, method, xResOut, yResOut, nChannelsOut);
 
-		float xRat = xResIn / (float)xResOut;
-		float yRat = yResIn / (float)yResOut;
 		delete ir;
 		iw->writeImage(out);
 		iw->closeImageFile();
